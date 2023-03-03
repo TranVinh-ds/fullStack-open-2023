@@ -2,16 +2,25 @@ import { useState } from 'react';
 
 const Statistics = ({ good, neutral, bad }) => {
   const All = good + neutral + bad;
-  return (
-    <div>
+  const Average = All > 0 ? fixedToTwo((good - bad) / All) : 0;
+  const Positive = All > 0 ? fixedToTwo((good / All) * 100) : 0;
+
+  return All === 0 ? (
+    'No feedback given'
+  ) : (
+    <>
       <p>good {good}</p>
       <p>neutral {neutral}</p>
       <p>bad {bad}</p>
       <p>all {All}</p>
-      <p>average {3 / All}</p>
-      <p>positive {(good / All) * 100} %</p>
-    </div>
+      <p>average {Average}</p>
+      <p>positive {Positive} %</p>
+    </>
   );
+};
+
+const fixedToTwo = (num) => {
+  return Math.round(num * 100 + Number.EPSILON) / 100;
 };
 
 const App = () => {
