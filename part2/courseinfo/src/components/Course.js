@@ -1,15 +1,13 @@
 import React from 'react';
-import Header from './Header';
-import Content from './Content';
-import Total from './Total';
 
-const Course = ({ course }) => {
-  const { id, name, parts } = course;
+import Content from './Content';
+
+const Course = ({ courses }) => {
   return (
     <>
-      <Header title={name} />
-      <Content id={id} parts={parts} />
-      <Total parts={parts} />
+      {courses.map((course) => (
+        <Content key={course.id} course={course} />
+      ))}
     </>
   );
 };
