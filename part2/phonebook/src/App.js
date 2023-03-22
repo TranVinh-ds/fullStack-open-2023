@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Filter from './components/Filter';
 import PersonForm from './components/PersonForm';
 import Persons from './components/Persons';
@@ -8,9 +8,9 @@ import Notification from './components/Notification';
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState('');
-  const [newNumber, setNewNumber] = useState('');
+  const [newNum, setNewNum] = useState('');
   const [search, setSearch] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
     personService.getAll().then((initialPersons) => {
@@ -19,45 +19,50 @@ const App = () => {
   }, []);
 
   const filteredPersons = persons.filter((person) =>
-    person.name.toLocaleLowerCase().includes(search.toLocaleLowerCase())
+    person.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const removePerson = (id, newName) => {
+    if (window.confirm(`Delete ${newName}`)) {
+      personService.remove(id).then((response) => {
+        setPersons(persons.filter((person) => person.id !== id));
+      });
+    }
+  };
 
   const handleNameChange = (e) => {
     setNewName(e.target.value);
   };
 
   const handleNumChange = (e) => {
-    setNewNumber(e.target.value);
+    setNewNum(e.target.value);
   };
 
-  const removedPerson = (id, name) => {
-    if (window.confirm(`Delete ${name}?`)) {
-      personService.remove(id).then((response) => {
-        const updatedPersons = persons.filter((person) => person.id !== id);
-        setPersons(updatedPersons);
-      });
-    }
-  };
-
-  const addPerson = (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
-
-    const personObj = {
+    const newObj = {
       name: newName,
-      number: newNumber,
+      number: newNum,
       // id: persons.length + 1,
     };
-
-    const currentName = persons.filter((person) => person.name === newName);
-
-    if (currentName.length === 0) {
-      personService.create(personObj).then((returnedPerson) => {
-        setPersons(persons.concat(returnedPerson));
-        setMessage(`Added ${newName}`);
-        setTimeout(() => {
-          setMessage(null);
-        }, 5000);
-      });
+    const foundPerson = persons.filter((person) => person.name === newName);
+    if (foundPerson.length === 0) {
+      personService
+        .create(newObj)
+        .then((returnedPersons) => {
+          setPersons(persons.concat(returnedPersons));
+        })
+        .catch((error) => {
+          console.log(error.response.data.error);
+          setMessage(`${error.response.data.error}`);
+          setTimeout(() => {
+            setMessage(null);
+          }, 5000);
+        });
+      setMessage(`Added ${newName}`);
+      setTimeout(() => {
+        setMessage(null);
+      }, 5000);
     } else {
       if (
         window.confirm(
@@ -65,34 +70,27 @@ const App = () => {
         )
       ) {
         personService
-          .update(currentName[0].id, personObj)
+          .update(foundPerson[0].id, newObj)
           .then((updatedPerson) => {
             setPersons(
               persons.map((person) =>
-                person.id !== currentName[0].id ? person : updatedPerson
+                person.id !== foundPerson[0].id ? person : updatedPerson
               )
             );
-            // setMessage(`Added ${newName}`);
-            // setTimeout(() => {
-            //   setMessage(null);
-            // }, 5000);
           })
           .catch((error) => {
             setMessage(
               `Information of ${newName} has already been removed from server`
             );
-            setTimeout(() => {
-              setMessage(null);
-            }, 5000);
-            setPersons(
-              persons.filter((person) => person.id !== currentName[0].id)
-            );
           });
+        setTimeout(() => {
+          setMessage(null);
+        }, 5000);
+        setPersons(persons.filter((person) => person.id !== foundPerson[0].id));
       }
-      setMessage();
     }
     setNewName('');
-    setNewNumber('');
+    setNewNum('');
   };
 
   return (
@@ -102,17 +100,17 @@ const App = () => {
       <Filter search={search} setSearch={setSearch} />
       <h2>add a new</h2>
       <PersonForm
-        addPerson={addPerson}
+        onSubmit={onSubmit}
         newName={newName}
         handleNameChange={handleNameChange}
-        newNumber={newNumber}
+        newNum={newNum}
         handleNumChange={handleNumChange}
       />
       <h2>Numbers</h2>
       <Persons
         filteredPersons={filteredPersons}
         newName={newName}
-        removedPerson={removedPerson}
+        removePerson={removePerson}
       />
     </div>
   );
